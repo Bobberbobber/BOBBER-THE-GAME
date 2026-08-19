@@ -3,143 +3,129 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>Block Blast</title>
-
     <style>
         * { box-sizing: border-box; user-select: none; }
         body {
-            margin: 0;
-            min-height: 100vh;
-            background: #111827;
-            color: white;
-            font-family: Arial, sans-serif;
-
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: background-image 0.25s ease-in-out;
-            background-size: cover;
-            background-position: center;
+            margin: 0; min-height: 100vh;
+            background: #111827; color: white; font-family: Arial, sans-serif;
+            display: flex; justify-content: center; align-items: center;
+            transition: background-image 0.25s ease-in-out; background-size: cover; background-position: center;
         }
 
-        .game {
-            width: 420px;
-            max-width: 95vw;
-            text-align: center;
-        }
-
-        h1 { font-size: 38px; margin: 10px 0 20px; }
-
-        .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
-
-        .score { font-size: 20px; font-weight: bold; }
-
-        button { border: none; background: #374151; color: white; padding: 8px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; }
-        button:hover { background: #4b5563; }
+        .game { width: 420px; max-width: 95vw; text-align: center; }
+        h1 { font-size: 38px; margin: 10px 0 12px; }
+        .top { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px; }
+        .score { font-size:20px; font-weight:bold; }
+        button { border:none; background:#374151; color:white; padding:8px 12px; border-radius:8px; font-weight:bold; cursor:pointer; }
+        button:hover{ background:#4b5563; }
 
         #controls { display:flex; gap:8px; align-items:center; }
+        select, input[type="checkbox"] { cursor:pointer; }
 
         /* GAME BOARD */
         #board {
-            width: 100%;
-            aspect-ratio: 1;
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 5px;
-            background: rgba(11,18,32,0.75);
-            padding: 6px;
-            border-radius: 12px;
-            position: relative;
+            width:100%; aspect-ratio:1; display:grid; grid-template-columns: repeat(var(--size,8), 1fr);
+            gap:5px; background: rgba(11,18,32,0.75); padding:6px; border-radius:12px; position:relative;
         }
 
-        .cell { background: #1f2937; border-radius: 5px; transition: 0.08s; position: relative; }
-        .cell:hover { background: #374151; }
+        .cell { background:#1f2937; border-radius:5px; transition: 0.12s; position:relative; }
+        .cell:hover{ background:#374151; }
         .filled { box-shadow: inset 0 0 5px rgba(255,255,255,0.35); }
-
-        /* preview cell when placing */
-        .preview { opacity: 0.7; filter: brightness(1.1); outline: 2px dashed rgba(255,255,255,0.08); }
+        .preview { opacity:0.85; filter: brightness(1.05); outline: 2px dashed rgba(255,255,255,0.06); }
+        .cleared-anim { transition: transform 350ms ease, opacity 350ms ease; transform: scale(1.25); opacity: 0; }
 
         /* PIECES */
-        .pieces { margin-top: 18px; min-height: 110px; display: flex; justify-content: space-around; align-items: center; gap: 8px; }
+        .pieces { margin-top:18px; min-height:110px; display:flex; justify-content:space-around; align-items:center; gap:8px; }
+        .piece { display:grid; gap:3px; padding:8px; cursor:pointer; transition:0.12s; border-radius:8px; background: rgba(255,255,255,0.03); }
+        .piece:hover{ transform: scale(1.05); }
+        .piece.selected{ box-shadow:0 6px 18px rgba(0,0,0,0.5); border:2px solid rgba(255,255,255,0.08); }
+        .piece-cell{ width:25px; height:25px; border-radius:4px; }
+        .empty-piece-cell{ width:25px; height:25px; }
+        .piece-actions{ display:flex; gap:6px; margin-top:6px; justify-content:center; }
+        .small{ padding:6px 8px; font-size:13px; }
 
-        .piece {
-            display: grid; gap: 3px; padding: 8px; cursor: pointer; transition: 0.12s; border-radius: 8px; background: rgba(255,255,255,0.03);
-        }
-
-        .piece:hover { transform: scale(1.05); }
-        .piece.selected { box-shadow: 0 6px 18px rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.08); }
-
-        .piece-cell { width: 25px; height: 25px; border-radius: 4px; }
-        .empty-piece-cell { width: 25px; height: 25px; }
-
-        .piece-actions { display:flex; gap:6px; margin-top:6px; justify-content:center; }
-        .small { padding:6px 8px; font-size:13px; }
+        /* BACKGROUNDS */
+        .bg-gallery{ display:flex; gap:6px; margin-top:10px; justify-content:center; flex-wrap:wrap; }
+        .bg-thumb{ width:56px; height:38px; object-fit:cover; border-radius:6px; cursor:pointer; border:2px solid rgba(255,255,255,0.06); }
+        .bg-thumb.selected{ outline:2px solid #60a5fa; }
 
         /* GAME OVER */
-        .game-over { position: fixed; inset: 0; background: rgba(0,0,0,0.75); display: none; justify-content: center; align-items: center; }
-        .game-over-box { background: #1f2937; padding: 35px; border-radius: 15px; text-align: center; }
-        .game-over-box h2 { font-size: 32px; margin-top: 0; }
+        .game-over { position:fixed; inset:0; background: rgba(0,0,0,0.75); display:none; justify-content:center; align-items:center; }
+        .game-over-box{ background:#1f2937; padding:35px; border-radius:15px; text-align:center; }
+        .game-over-box h2{ font-size:32px; margin-top:0; }
 
-        /* Instructions */
-        .help { margin-top: 10px; font-size: 13px; color: #c7cbd1; }
-
-        /* Responsive tweak */
-        @media (max-width:420px){ .piece-cell,.empty-piece-cell{width:22px;height:22px} }
+        .help{ margin-top:10px; font-size:13px; color:#c7cbd1; }
+        @media (max-width:420px){ .piece-cell,.empty-piece-cell{ width:22px;height:22px } }
     </style>
 </head>
-
 <body>
-
 <div class="game">
-
     <h1>BLOCK BLAST</h1>
-
     <div class="top">
-        <div class="score">Score: <span id="score">0</span></div>
+        <div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px">
+            <div class="score">Score: <span id="score">0</span></div>
+            <div style="font-size:12px;color:#c7cbd1">Level: <span id="levelLabel">Normal</span></div>
+        </div>
 
         <div id="controls">
-            <label style="font-size:13px">
-                Background:
-                <input id="bgUpload" type="file" accept="image/png,image/jpeg" style="display:inline-block;margin-left:6px">
+            <label style="font-size:13px">Board:
+                <select id="sizeSelect">
+                    <option value="8">8x8</option>
+                    <option value="10">10x10</option>
+                    <option value="12">12x12</option>
+                </select>
             </label>
-            <button onclick="restartGame()">Restart</button>
+
+            <label style="font-size:13px">Difficulty:
+                <select id="difficultySelect">
+                    <option value="easy">Easy</option>
+                    <option value="normal" selected>Normal</option>
+                    <option value="hard">Hard</option>
+                </select>
+            </label>
+
+            <label title="Mute sounds">
+                <input type="checkbox" id="muteToggle"> mute
+            </label>
+
+            <button id="restartBtn">Restart</button>
         </div>
     </div>
 
-    <div id="board"></div>
+    <div id="board" style="--size:8"></div>
 
     <div class="pieces" id="pieces"></div>
 
-    <div class="help">
-        Click a piece to select it. Hover or use arrow keys to preview. Press Enter or click a cell to place. You can rotate a selected piece (Rotate button) or drag a piece onto the board.
-    </div>
+    <div class="help">Click a piece to select it. Hover the board to preview. Use arrow keys to move preview, Enter to place. Drag pieces or use Rotate. Choose a background below or upload your own.</div>
 
+    <div style="margin-top:10px;display:flex;flex-direction:column;align-items:center;gap:8px">
+        <div class="bg-gallery" id="bgGallery"></div>
+        <label style="font-size:13px">Upload background: <input id="bgUpload" type="file" accept="image/png,image/jpeg" style="margin-left:6px"></label>
+    </div>
 </div>
 
-
-<!-- GAME OVER SCREEN -->
 <div class="game-over" id="gameOver">
     <div class="game-over-box">
         <h2>Game Over!</h2>
         <p>Score: <span id="finalScore">0</span></p>
-        <button onclick="restartGame()">Play Again</button>
+        <button id="playAgain">Play Again</button>
     </div>
 </div>
 
-
 <script>
-const SIZE = 8;
+/* Game with: background selector, sound effects (programmatic), clear animations, board size + difficulty */
+let SIZE = 8; // will be set from select
 let board = [];
 let score = 0;
 let pieces = [];
-let selectedPiece = null; // will hold index of piece
+let selectedPiece = null;
 let previewPos = { row: 0, col: 0 };
+let scoreMultiplier = 1;
+let audioCtx = null;
+let muted = false;
 
-/* COLORS */
 const colors = ["#ff4757","#ffa502","#2ed573","#1e90ff","#a55eea","#ff6b81","#00d2d3"];
-
-/* BLOCK SHAPES */
 const shapes = [
     [[0,0]],
     [[0,0],[0,1]],
@@ -156,225 +142,119 @@ const shapes = [
     [[0,0],[0,1],[0,2],[1,0],[1,1],[1,2],[2,0],[2,1],[2,2]]
 ];
 
-/* CREATE EMPTY BOARD */
-function createBoard(){ board=[]; for(let row=0;row<SIZE;row++){ board[row]=[]; for(let col=0;col<SIZE;col++){ board[row][col]=null; } } }
+function createBoard(){ board=[]; for(let r=0;r<SIZE;r++){ board[r]=[]; for(let c=0;c<SIZE;c++){ board[r][c]=null; } } }
 
-/* DRAW BOARD */
 function drawBoard(){
-    const boardElement = document.getElementById("board");
-    boardElement.innerHTML = "";
+    const boardElement = document.getElementById('board');
+    boardElement.style.setProperty('--size', SIZE);
+    boardElement.innerHTML = '';
+    for(let r=0;r<SIZE;r++){
+        for(let c=0;c<SIZE;c++){
+            const cell = document.createElement('div'); cell.className='cell'; cell.dataset.row=r; cell.dataset.col=c;
+            if(board[r][c]){ cell.classList.add('filled'); cell.style.background = board[r][c]; }
+            // preview
+            if(selectedPiece !== null){ const piece = pieces[selectedPiece]; if(piece){ const covers = piece.shape.some(([pr,pc]) => previewPos.row+pr===r && previewPos.col+pc===c); if(covers){ cell.classList.add('preview'); cell.style.background = piece.color; } } }
 
-    for(let row=0;row<SIZE;row++){
-        for(let col=0;col<SIZE;col++){
-            const cell = document.createElement("div");
-            cell.className = "cell";
-            cell.dataset.row = row;
-            cell.dataset.col = col;
-
-            if(board[row][col]){
-                cell.classList.add("filled");
-                cell.style.background = board[row][col];
-            }
-
-            // If a piece is selected, show preview if it covers this cell
-            if(selectedPiece !== null){
-                const piece = pieces[selectedPiece];
-                if(piece){
-                    const covers = piece.shape.some(([r,c]) => (previewPos.row + r === row && previewPos.col + c === col));
-                    if(covers){
-                        cell.classList.add("preview");
-                        cell.style.background = piece.color;
-                    }
-                }
-            }
-
-            cell.addEventListener("click", ()=>{
-                if(selectedPiece !== null){ placePiece(selectedPiece, row, col); }
-            });
-
-            // dragover/drop for pieces
-            cell.addEventListener("dragover", (e)=>{ e.preventDefault(); });
-            cell.addEventListener("drop", (e)=>{
-                e.preventDefault();
-                const idx = parseInt(e.dataTransfer.getData('text/plain'));
-                if(!Number.isNaN(idx)){
-                    placePiece(idx, row, col);
-                }
-            });
-
-            // mouseenter to move preview
-            cell.addEventListener("mouseenter", ()=>{
-                previewPos.row = row; previewPos.col = col; drawBoard();
-            });
-
+            cell.addEventListener('click', ()=>{ if(selectedPiece!==null){ placePiece(selectedPiece, r, c); } });
+            cell.addEventListener('mouseenter', ()=>{ previewPos.row=r; previewPos.col=c; drawBoard(); });
+            cell.addEventListener('dragover', e=>e.preventDefault());
+            cell.addEventListener('drop', (e)=>{ e.preventDefault(); const idx = parseInt(e.dataTransfer.getData('text/plain')); if(!Number.isNaN(idx)){ placePiece(idx, r, c); } });
             boardElement.appendChild(cell);
         }
     }
 }
 
-/* CREATE RANDOM PIECE */
-function randomPiece(){
-    const shape = shapes[Math.floor(Math.random()*shapes.length)];
-    const color = colors[Math.floor(Math.random()*colors.length)];
-    // clone shape to avoid mutating original shapes when rotating
-    const shapeCopy = shape.map(s => [s[0], s[1]]);
-    return { shape: shapeCopy, color };
-}
-
-/* GENERATE PIECES */
+function randomPiece(){ const shape = shapes[Math.floor(Math.random()*shapes.length)]; const color = colors[Math.floor(Math.random()*colors.length)]; const shapeCopy = shape.map(s=>[s[0],s[1]]); return { shape: shapeCopy, color }; }
 function generatePieces(){ pieces = [ randomPiece(), randomPiece(), randomPiece() ]; drawPieces(); }
 
-/* DRAW PIECES */
-function drawPieces(){
-    const container = document.getElementById("pieces"); container.innerHTML = "";
+function drawPieces(){ const container = document.getElementById('pieces'); container.innerHTML=''; pieces.forEach((piece,idx)=>{
+    const wrapper = document.createElement('div'); wrapper.style.display='flex'; wrapper.style.flexDirection='column'; wrapper.style.alignItems='center';
+    const el = document.createElement('div'); el.className='piece'; if(selectedPiece===idx) el.classList.add('selected');
+    const maxR = Math.max(...piece.shape.map(s=>s[0])); const maxC = Math.max(...piece.shape.map(s=>s[1])); el.style.gridTemplateRows=`repeat(${maxR+1},25px)`; el.style.gridTemplateColumns=`repeat(${maxC+1},25px)`; el.style.display='grid';
+    for(let r=0;r<=maxR;r++){ for(let c=0;c<=maxC;c++){ const cell = document.createElement('div'); const exists = piece.shape.some(b=>b[0]===r && b[1]===c); if(exists){ cell.className='piece-cell'; cell.style.background = piece.color; } else { cell.className='empty-piece-cell'; } el.appendChild(cell); } }
+    el.addEventListener('click', ()=>{ selectedPiece = idx; previewPos = { row: Math.floor(SIZE/2), col: Math.floor(SIZE/2) }; drawPieces(); drawBoard(); });
+    el.setAttribute('draggable','true'); el.addEventListener('dragstart',(e)=>{ e.dataTransfer.setData('text/plain', String(idx)); });
+    const actions = document.createElement('div'); actions.className='piece-actions';
+    const rotateBtn = document.createElement('button'); rotateBtn.className='small'; rotateBtn.textContent='Rotate'; rotateBtn.title='Rotate 90°'; rotateBtn.addEventListener('click',(ev)=>{ ev.stopPropagation(); rotatePiece(idx); });
+    const removeBtn = document.createElement('button'); removeBtn.className='small'; removeBtn.textContent='X'; removeBtn.title='Remove (debug)'; removeBtn.addEventListener('click',(ev)=>{ ev.stopPropagation(); pieces.splice(idx,1); selectedPiece=null; generateIfEmpty(); drawBoard(); drawPieces(); updateScore(); });
+    actions.appendChild(rotateBtn); actions.appendChild(removeBtn); wrapper.appendChild(el); wrapper.appendChild(actions); container.appendChild(wrapper);
+}); }
 
-    pieces.forEach((piece, index)=>{
-        const wrapper = document.createElement('div');
-        wrapper.style.display = 'flex';
-        wrapper.style.flexDirection = 'column';
-        wrapper.style.alignItems = 'center';
-
-        const element = document.createElement("div");
-        element.className = 'piece';
-        if(selectedPiece === index) element.classList.add('selected');
-
-        const maxRow = Math.max(...piece.shape.map(block=>block[0]));
-        const maxCol = Math.max(...piece.shape.map(block=>block[1]));
-        element.style.gridTemplateRows = `repeat(${maxRow+1}, 25px)`;
-        element.style.gridTemplateColumns = `repeat(${maxCol+1}, 25px)`;
-        element.style.display = 'grid';
-
-        for(let row=0; row<=maxRow; row++){
-            for(let col=0; col<=maxCol; col++){
-                const cell = document.createElement('div');
-                const exists = piece.shape.some(block => block[0]===row && block[1]===col);
-                if(exists){ cell.className = 'piece-cell'; cell.style.background = piece.color; }
-                else{ cell.className = 'empty-piece-cell'; }
-                element.appendChild(cell);
-            }
-        }
-
-        // click selects the piece
-        element.addEventListener('click', ()=>{ selectedPiece = index; // reset preview position to center-ish
-            previewPos = { row: Math.floor(SIZE/2), col: Math.floor(SIZE/2) }; drawPieces(); drawBoard();
-        });
-
-        // enable drag
-        element.setAttribute('draggable','true');
-        element.addEventListener('dragstart', (e)=>{ e.dataTransfer.setData('text/plain', String(index)); });
-
-        // actions: rotate
-        const actions = document.createElement('div'); actions.className = 'piece-actions';
-        const rotateBtn = document.createElement('button'); rotateBtn.className='small'; rotateBtn.textContent='Rotate';
-        rotateBtn.title = 'Rotate piece 90° clockwise';
-        rotateBtn.addEventListener('click',(ev)=>{ ev.stopPropagation(); rotatePiece(index); });
-
-        const removeBtn = document.createElement('button'); removeBtn.className='small'; removeBtn.textContent='X'; removeBtn.title='Remove (for testing)';
-        removeBtn.addEventListener('click',(ev)=>{ ev.stopPropagation(); pieces.splice(index,1); selectedPiece=null; generateIfEmpty(); drawBoard(); drawPieces(); updateScore(); });
-
-        actions.appendChild(rotateBtn); actions.appendChild(removeBtn);
-
-        wrapper.appendChild(element);
-        wrapper.appendChild(actions);
-        container.appendChild(wrapper);
-    });
-}
-
-function rotatePiece(index){
-    const piece = pieces[index];
-    if(!piece) return;
-    // rotate 90deg clockwise around origin: (r,c) -> (c, -r)
-    let rotated = piece.shape.map(([r,c])=>[c, -r]);
-    // normalize so min row/col is 0
-    const minR = Math.min(...rotated.map(s=>s[0]));
-    const minC = Math.min(...rotated.map(s=>s[1]));
-    rotated = rotated.map(([r,c])=>[r - minR, c - minC]);
-    piece.shape = rotated;
-    drawPieces(); drawBoard();
-}
-
+function rotatePiece(index){ const piece = pieces[index]; if(!piece) return; let rotated = piece.shape.map(([r,c])=>[c, -r]); const minR = Math.min(...rotated.map(s=>s[0])); const minC = Math.min(...rotated.map(s=>s[1])); rotated = rotated.map(([r,c])=>[r-minR, c-minC]); piece.shape = rotated; drawPieces(); drawBoard(); playSFX('rotate'); }
 function generateIfEmpty(){ if(pieces.length===0) generatePieces(); }
 
-/* CHECK IF PIECE CAN FIT */
-function canPlace(piece, row, col){
-    for(const [r,c] of piece.shape){
-        const newRow = row + r; const newCol = col + c;
-        if(newRow<0 || newRow>=SIZE || newCol<0 || newCol>=SIZE) return false;
-        if(board[newRow][newCol] !== null) return false;
-    }
-    return true;
-}
+function canPlace(piece,row,col){ for(const [r,c] of piece.shape){ const nr=row+r, nc=col+c; if(nr<0||nr>=SIZE||nc<0||nc>=SIZE) return false; if(board[nr][nc] !== null) return false; } return true; }
 
-/* PLACE PIECE */
-function placePiece(pieceIndex, row, col){
-    const piece = pieces[pieceIndex]; if(!piece) return;
-    if(!canPlace(piece, row, col)) return;
-    for(const [r,c] of piece.shape){ board[row+r][col+c] = piece.color; }
-    score += piece.shape.length * 10;
-    pieces.splice(pieceIndex,1);
-    selectedPiece = null; // clear selection
-    clearLines();
-    generateIfEmpty();
-    drawPieces(); drawBoard(); updateScore(); checkGameOver();
-}
+function placePiece(pieceIndex,row,col){ const piece = pieces[pieceIndex]; if(!piece) return; if(!canPlace(piece,row,col)) return; for(const [r,c] of piece.shape){ board[row+r][col+c] = piece.color; }
+    score += Math.round(piece.shape.length * 10 * scoreMultiplier);
+    playSFX('place'); pieces.splice(pieceIndex,1); selectedPiece=null; // animate clears if any
+    clearLines().then(()=>{ generateIfEmpty(); drawPieces(); drawBoard(); updateScore(); checkGameOver(); }); }
 
-/* CLEAR FULL ROWS AND COLUMNS */
-function clearLines(){
-    let cleared = 0;
-    for(let row = SIZE-1; row>=0; row--){
-        const full = board[row].every(cell => cell !== null);
-        if(full){ board.splice(row,1); board.unshift(new Array(SIZE).fill(null)); cleared++; row++; }
-    }
-    for(let col=0; col<SIZE; col++){
-        let full = true; for(let row=0; row<SIZE; row++){ if(board[row][col]===null){ full=false; break; } }
-        if(full){ for(let row=0; row<SIZE; row++) board[row][col] = null; cleared++; }
-    }
-    if(cleared>0) score += cleared * 100;
-}
+function clearLines(){ return new Promise(resolve=>{
+    const toClearRows = []; const toClearCols = [];
+    for(let r=0;r<SIZE;r++){ if(board[r].every(cell=>cell!==null)) toClearRows.push(r); }
+    for(let c=0;c<SIZE;c++){ let full=true; for(let r=0;r<SIZE;r++){ if(board[r][c]===null){ full=false; break; } } if(full) toClearCols.push(c); }
+    if(toClearRows.length===0 && toClearCols.length===0){ resolve(); return; }
+    // mark affected cells then animate
+    const cellsToAnimate = [];
+    toClearRows.forEach(r=>{ for(let c=0;c<SIZE;c++){ cellsToAnimate.push({r,c}); } });
+    toClearCols.forEach(c=>{ for(let r=0;r<SIZE;r++){ // avoid duplicates
+        if(!cellsToAnimate.some(x=>x.r===r&&x.c===c)) cellsToAnimate.push({r,c}); } });
 
-/* CHECK GAME OVER */
-function checkGameOver(){
-    for(let i=0;i<pieces.length;i++){
-        const piece = pieces[i];
-        for(let row=0; row<SIZE; row++){
-            for(let col=0; col<SIZE; col++){
-                if(canPlace(piece,row,col)) return; }
-        }
-    }
-    document.getElementById('finalScore').textContent = score;
-    document.getElementById('gameOver').style.display = 'flex';
-}
+    // add animation class
+    cellsToAnimate.forEach(({r,c})=>{
+        const sel = `.cell[data-row='${r}'][data-col='${c}']`;
+        const el = document.querySelector(sel);
+        if(el) el.classList.add('cleared-anim');
+    });
+    playSFX('clear'); // wait for animation then remove rows/cols
+    setTimeout(()=>{
+        // remove rows
+        let clearedCount = 0;
+        toClearRows.forEach(r=>{ board.splice(r,1); board.unshift(new Array(SIZE).fill(null)); clearedCount++; });
+        // remove columns
+        toClearCols.forEach(c=>{ for(let r=0;r<SIZE;r++) board[r][c] = null; clearedCount++; });
+        // scoring bonus
+        if(clearedCount>0) score += Math.round(clearedCount * 100 * scoreMultiplier);
+        resolve();
+    }, 380);
+}); }
 
-/* UPDATE SCORE */
+function checkGameOver(){ for(let i=0;i<pieces.length;i++){ const piece=pieces[i]; for(let r=0;r<SIZE;r++){ for(let c=0;c<SIZE;c++){ if(canPlace(piece,r,c)) return; } } }
+    document.getElementById('finalScore').textContent = score; document.getElementById('gameOver').style.display='flex'; playSFX('gameover'); }
+
 function updateScore(){ document.getElementById('score').textContent = score; }
-
-/* RESTART */
 function restartGame(){ score=0; selectedPiece=null; previewPos={row:0,col:0}; document.getElementById('gameOver').style.display='none'; createBoard(); generatePieces(); drawBoard(); updateScore(); }
 
-/* keyboard controls for preview and placing */
-window.addEventListener('keydown', (e)=>{
-    if(selectedPiece===null) return;
-    if(e.key==='ArrowUp'){ previewPos.row = Math.max(0, previewPos.row-1); drawBoard(); e.preventDefault(); }
-    if(e.key==='ArrowDown'){ previewPos.row = Math.min(SIZE-1, previewPos.row+1); drawBoard(); e.preventDefault(); }
-    if(e.key==='ArrowLeft'){ previewPos.col = Math.max(0, previewPos.col-1); drawBoard(); e.preventDefault(); }
-    if(e.key==='ArrowRight'){ previewPos.col = Math.min(SIZE-1, previewPos.col+1); drawBoard(); e.preventDefault(); }
-    if(e.key==='Enter'){ placePiece(selectedPiece, previewPos.row, previewPos.col); e.preventDefault(); }
-});
+// keyboard controls
+window.addEventListener('keydown', (e)=>{ if(selectedPiece===null) return; if(e.key==='ArrowUp'){ previewPos.row=Math.max(0,previewPos.row-1); drawBoard(); e.preventDefault(); } if(e.key==='ArrowDown'){ previewPos.row=Math.min(SIZE-1,previewPos.row+1); drawBoard(); e.preventDefault(); } if(e.key==='ArrowLeft'){ previewPos.col=Math.max(0,previewPos.col-1); drawBoard(); e.preventDefault(); } if(e.key==='ArrowRight'){ previewPos.col=Math.min(SIZE-1,previewPos.col+1); drawBoard(); e.preventDefault(); } if(e.key==='Enter'){ placePiece(selectedPiece, previewPos.row, previewPos.col); e.preventDefault(); } });
 
-/* Background upload handler - allows player to pick PNG/JPEG to use as page background */
-const bgUpload = document.getElementById('bgUpload');
-bgUpload.addEventListener('change', (e)=>{
-    const file = e.target.files && e.target.files[0];
-    if(!file) return;
-    const reader = new FileReader();
-    reader.onload = function(ev){ document.body.style.backgroundImage = `url(${ev.target.result})`; };
-    reader.readAsDataURL(file);
-});
+// SFX: simple WebAudio tones
+function ensureAudio(){ if(muted) return; if(!audioCtx){ try{ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ audioCtx=null; } } }
+function playTone(freq,duration=0.12,type='sine',gain=0.07){ if(muted) return; ensureAudio(); if(!audioCtx) return; const o = audioCtx.createOscillator(); const g = audioCtx.createGain(); o.type=type; o.frequency.value=freq; g.gain.value = gain; o.connect(g); g.connect(audioCtx.destination); o.start(); g.gain.setTargetAtTime(0, audioCtx.currentTime + duration*0.8, 0.01); setTimeout(()=>{ o.stop(); o.disconnect(); g.disconnect(); }, duration*1000+50); }
+function playSFX(name){ if(muted) return; switch(name){ case 'place': playTone(880,0.09,'sine',0.06); break; case 'clear': playTone(440,0.28,'sawtooth',0.09); playTone(660,0.18,'sine',0.06); break; case 'rotate': playTone(1200,0.06,'triangle',0.04); break; case 'gameover': playTone(180,0.35,'sine',0.12); setTimeout(()=>playTone(120,0.35,'sine',0.12),120); break; } }
 
-/* START GAME */
-restartGame();
+// Background gallery
+const sampleBGs = [
+  'https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=1200&auto=format&fit=crop&ixlib=rb-4.0.3&s=0',
+  'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=1200&auto=format&fit=crop&ixlib=rb-4.0.3&s=0',
+  'https://images.unsplash.com/photo-1502082553048-f009c37129b9?q=80&w=1200&auto=format&fit=crop&ixlib=rb-4.0.3&s=0'
+];
+function initBGGallery(){ const g=document.getElementById('bgGallery'); sampleBGs.forEach((url,i)=>{ const img=document.createElement('img'); img.src=url; img.className='bg-thumb'; img.title='Background sample '+(i+1); img.addEventListener('click', ()=>{ document.body.style.backgroundImage = `url(${url})`; document.querySelectorAll('.bg-thumb').forEach(t=>t.classList.remove('selected')); img.classList.add('selected'); }); g.appendChild(img); });
+    // upload hook
+    const up = document.getElementById('bgUpload'); up.addEventListener('change',(e)=>{ const file=e.target.files && e.target.files[0]; if(!file) return; const reader=new FileReader(); reader.onload=(ev)=>{ document.body.style.backgroundImage = `url(${ev.target.result})`; document.querySelectorAll('.bg-thumb').forEach(t=>t.classList.remove('selected')); }; reader.readAsDataURL(file); }); }
 
+// UI wiring
+document.getElementById('restartBtn').addEventListener('click', ()=>{ restartGame(); playSFX('place'); });
+document.getElementById('playAgain').addEventListener('click', ()=>{ restartGame(); document.getElementById('gameOver').style.display='none'; });
+document.getElementById('sizeSelect').addEventListener('change',(e)=>{ SIZE = parseInt(e.target.value) || 8; document.getElementById('board').style.gridTemplateColumns = `repeat(${SIZE},1fr)`; // update CSS var
+    createBoard(); generatePieces(); drawPieces(); drawBoard(); updateScore(); });
+document.getElementById('difficultySelect').addEventListener('change',(e)=>{ const val=e.target.value; const label=document.getElementById('levelLabel'); if(val==='easy'){ scoreMultiplier = 0.8; label.textContent='Easy'; } else if(val==='normal'){ scoreMultiplier = 1; label.textContent='Normal'; } else { scoreMultiplier = 1.4; label.textContent='Hard'; } });
+document.getElementById('muteToggle').addEventListener('change',(e)=>{ muted = e.target.checked; if(!muted) ensureAudio(); });
+
+// start state
+initBGGallery(); document.getElementById('sizeSelect').value = String(SIZE); document.getElementById('difficultySelect').value='normal';
+createBoard(); generatePieces(); drawBoard(); updateScore();
 </script>
-
 </body>
 </html>
