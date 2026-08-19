@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Block Blast</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+            user-select: none;
+        }
+
+        body {
+            margin: 0;
+            min-height: 100vh;
+            background: #111827;
+            color: white;
+            font-family: Arial, sans-serif;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .game {
+            width: 420px;
+            max-width: 95vw;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 38px;
+            margin: 10px 0 20px;
+        }
+
+        .top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .score {
+            font-size: 22px;
+            font-weight: bold;
+        }
+
+        button {
+            border: none;
+            background: #374151;
+            color: white;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background: #4b5563;
+        }
+
+        /* GAME BOARD */
+
+        #board {
+            width: 100%;
+            aspect-ratio: 1;
+
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+
+            gap: 5px;
+
+            background: #0b1220;
+            padding: 6px;
+
+            border-radius: 12px;
+        }
+
+        .cell {
+            background: #1f2937;
+            border-radius: 5px;
+            transition: 0.1s;
+        }
+
+        .cell:hover {
+            background: #374151;
+        }
+
+        .filled {
+            box-shadow:
+                inset 0 0 5px rgba(255,255,255,0.4);
+        }
+
+        /* PIECES */
+
+        .pieces {
+            margin-top: 25px;
+
+            min-height: 100px;
+
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+
+        .piece {
+            display: grid;
+            gap: 3px;
+
+            padding: 10px;
+
+            cursor: pointer;
+
+            transition: 0.15s;
+        }
+
+        .piece:hover {
+            transform: scale(1.1);
+        }
+
+        .piece-cell {
+            width: 25px;
+            height: 25px;
+            border-radius: 4px;
+        }
+
+        .empty-piece-cell {
+            width: 25px;
+            height: 25px;
+        }
+
+        /* GAME OVER */
+
+        .game-over {
+            position: fixed;
+
+            inset: 0;
+
+            background: rgba(0,0,0,0.75);
+
+            display: none;
+
+            justify-content: center;
+            align-items: center;
+        }
+
+        .game-over-box {
+            background: #1f2937;
+
+            padding: 35px;
+
+            border-radius: 15px;
+
+            text-align: center;
+        }
+
+        .game-over-box h2 {
+            font-size: 32px;
+            margin-top: 0;
+        }
+
+        .game-over-box p {
+            font-size: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="game">
+
+    <h1>BLOCK BLAST</h1>
+
+    <div class="top">
+
+        <div class="score">
+            Score:
+            <span id="score">0</span>
+        </div>
+
+        <button onclick="restartGame()">
+            Restart
+        </button>
+
+    </div>
+
+    <div id="board"></div>
+
+    <div class="pieces" id="pieces"></div>
+
+</div>
+
+
+<!-- GAME OVER SCREEN -->
+
+<div class="game-over" id="gameOver">
+
+    <div class="game-over-box">
+
+        <h2>Game Over!</h2>
+
+        <p>
+            Score:
+            <span id="finalScore">0</span>
+        </p>
+
+        <button onclick="restartGame()">
+            Play Again
+        </button>
+
+    </div>
+
+</div>
+
+
+<script>
+
+const SIZE = 8;
+
+let board = [];
+
+let score = 0;
+
+let pieces = [];
+
+let selectedPiece = null;
+
+
+/* COLORS */
+
+const colors = [
+    "#ff4757",
+    "#ffa502",
+    "#2ed573",
+    "#1e90ff",
+    "#a55eea",
+    "#ff6b81",
+    "#00d2d3"
+];
+
+
+/* BLOCK SHAPES */
+
+const shapes = [
+
+    // Single block
+    [
+        [0,0]
+    ],
+
+    // 2 horizontal
+    [
+        [0,0],
+        [0,1]
+    ],
+
+    // 3 horizontal
+    [
+        [0,0],
+        [0,1],
+        [0,2]
+    ],
+
+    // 4 horizontal
+    [
+        [0,0],
+        [0,1],
+        [0,2],
+        [0,3]
+    ],
+
+    // 5 horizontal
+    [
+        [0,0],
+        [0,1],
+        [0,2],
+        [0,3],
+        [0,4]
+    ],
+
+    // Vertical 3
+    [
+        [0,0],
+        [1,0],
+        [2,0]
+    ],
+
+    // Square
+    [
+        [0,0],
+        [0,1],
+        [1,0],
+        [1,1]
+    ],
+
+    // L
+    [
+        [0,0],
+        [1,0],
+        [2,0],
+        [2,1]
+    ],
+
+    // Reverse L
+    [
+        [0,1],
+        [1,1],
+        [2,1],
+        [2,0]
+    ],
+
+    // T
+    [
+        [0,0],
+        [0,1],
+        [0,2],
+        [1,1]
+    ],
+
+    // Z
+    [
+        [0,0],
+        [0,1],
+        [1,1],
+        [1,2]
+    ],
+
+    // Plus
+    [
+        [0,1],
+        [1,0],
+        [1,1],
+        [1,2],
+        [2,1]
+    ],
+
+    // 3x3 square
+    [
+        [0,0],
+        [0,1],
+        [0,2],
+
+        [1,0],
+        [1,1],
+        [1,2],
+
+        [2,0],
+        [2,1],
+        [2,2]
+    ]
+];
+
+
+/* CREATE EMPTY BOARD */
+
+function createBoard() {
+
+    board = [];
+
+    for (let row = 0; row < SIZE; row++) {
+
+        board[row] = [];
+
+        for (let col = 0; col < SIZE; col++) {
+
+            board[row][col] = null;
+
+        }
+    }
+}
+
+
+/* DRAW BOARD */
+
+function drawBoard() {
+
+    const boardElement =
+        document.getElementById("board");
+
+    boardElement.innerHTML = "";
+
+
+    for (let row = 0; row < SIZE; row++) {
+
+        for (let col = 0; col < SIZE; col++) {
+
+            const cell =
+                document.createElement("div");
+
+            cell.className = "cell";
+
+            cell.dataset.row = row;
+            cell.dataset.col = col;
+
+
+            if (board[row][col]) {
+
+                cell.classList.add("filled");
+
+                cell.style.background =
+                    board[row][col];
+
+            }
+
+
+            cell.addEventListener(
+                "click",
+                () => {
+
+                    if (selectedPiece !== null) {
+
+                        placePiece(
+                            selectedPiece,
+                            row,
+                            col
+                        );
+
+                    }
+
+                }
+            );
+
+
+            boardElement.appendChild(cell);
+
+        }
+    }
+}
+
+
+/* CREATE RANDOM PIECE */
+
+function randomPiece() {
+
+    const shape =
+        shapes[
+            Math.floor(
+                Math.random() * shapes.length
+            )
+        ];
+
+
+    const color =
+        colors[
+            Math.floor(
+                Math.random() * colors.length
+            )
+        ];
+
+
+    return {
+
+        shape: shape,
+
+        color: color
+
+    };
+}
+
+
+/* GENERATE THREE PIECES */
+
+function generatePieces() {
+
+    pieces = [
+
+        randomPiece(),
+
+        randomPiece(),
+
+        randomPiece()
+
+    ];
+
+
+    drawPieces();
+}
+
+
+/* DRAW PIECES */
+
+function drawPieces() {
+
+    const container =
+        document.getElementById("pieces");
+
+    container.innerHTML = "";
+
+
+    pieces.forEach((piece, index) => {
+
+        const element =
+            document.createElement("div");
+
+        element.className = "piece";
+
+
+        const maxRow =
+            Math.max(
+                ...piece.shape.map(
+                    block => block[0]
+                )
+            );
+
+
+        const maxCol =
+            Math.max(
+                ...piece.shape.map(
+                    block => block[1]
+                )
+            );
+
+
+        element.style.gridTemplateRows =
+            `repeat(${maxRow + 1}, 25px)`;
+
+
+        element.style.gridTemplateColumns =
+            `repeat(${maxCol + 1}, 25px)`;
+
+
+        for (
+            let row = 0;
+            row <= maxRow;
+            row++
+        ) {
+
+            for (
+                let col = 0;
+                col <= maxCol;
+                col++
+            ) {
+
+                const cell =
+                    document.createElement("div");
+
+
+                const exists =
+                    piece.shape.some(
+                        block =>
+                            block[0] === row &&
+                            block[1] === col
+                    );
+
+
+                if (exists) {
+
+                    cell.className =
+                        "piece-cell";
+
+                    cell.style.background =
+                        piece.color;
+
+                } else {
+
+                    cell.className =
+                        "empty-piece-cell";
+
+                }
+
+
+                element.appendChild(cell);
+
+            }
+        }
+
+
+        element.addEventListener(
+            "click",
+            () => {
+
+                selectedPiece = index;
+
+            }
+        );
+
+
+        container.appendChild(element);
+
+    });
+}
+
+
+/* CHECK IF PIECE CAN FIT */
+
+function canPlace(
+    piece,
+    row,
+    col
+) {
+
+    for (const [r, c] of piece.shape) {
+
+        const newRow =
+            row + r;
+
+        const newCol =
+            col + c;
+
+
+        // Outside board
+
+        if (
+            newRow < 0 ||
+            newRow >= SIZE ||
+            newCol < 0 ||
+            newCol >= SIZE
+        ) {
+
+            return false;
+
+        }
+
+
+        // Cell already occupied
+
+        if (
+            board[newRow][newCol] !== null
+        ) {
+
+            return false;
+
+        }
+
+    }
+
+
+    return true;
+}
+
+
+/* PLACE PIECE */
+
+function placePiece(
+    pieceIndex,
+    row,
+    col
+) {
+
+    const piece =
+        pieces[pieceIndex];
+
+
+    if (!piece) {
+        return;
+    }
+
+
+    if (
+        !canPlace(
+            piece,
+            row,
+            col
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    /* Put blocks on board */
+
+    for (
+        const [r, c]
+        of piece.shape
+    ) {
+
+        board[row + r][col + c] =
+            piece.color;
+
+    }
+
+
+    /* Add score */
+
+    score +=
+        piece.shape.length * 10;
+
+
+    /* Remove used piece */
+
+    pieces.splice(
+        pieceIndex,
+        1
+    );
+
+
+    selectedPiece = null;
+
+
+    /* Clear lines */
+
+    clearLines();
+
+
+    /* If all three pieces used */
+
+    if (pieces.length === 0) {
+
+        generatePieces();
+
+    } else {
+
+        drawPieces();
+
+    }
+
+
+    drawBoard();
+
+    updateScore();
+
+    checkGameOver();
+
+}
+
+
+/* CLEAR FULL ROWS AND COLUMNS */
+
+function clearLines() {
+
+    let cleared = 0;
+
+
+    /* ROWS */
+
+    for (
+        let row = SIZE - 1;
+        row >= 0;
+        row--
+    ) {
+
+        const full =
+            board[row].every(
+                cell => cell !== null
+            );
+
+
+        if (full) {
+
+            board.splice(
+                row,
+                1
+            );
+
+
+            board.unshift(
+                new Array(SIZE).fill(null)
+            );
+
+
+            cleared++;
+
+            row++;
+
+        }
+
+    }
+
+
+    /* COLUMNS */
+
+    for (
+        let col = 0;
+        col < SIZE;
+        col++
+    ) {
+
+        let full = true;
+
+
+        for (
+            let row = 0;
+            row < SIZE;
+            row++
+        ) {
+
+            if (
+                board[row][col] === null
+            ) {
+
+                full = false;
+
+                break;
+
+            }
+
+        }
+
+
+        if (full) {
+
+            for (
+                let row = 0;
+                row < SIZE;
+                row++
+            ) {
+
+                board[row][col] = null;
+
+            }
+
+
+            cleared++;
+
+        }
+
+    }
+
+
+    /* BONUS */
+
+    if (cleared > 0) {
+
+        score +=
+            cleared * 100;
+
+    }
+
+}
+
+
+/* CHECK GAME OVER */
+
+function checkGameOver() {
+
+    for (
+        let i = 0;
+        i < pieces.length;
+        i++
+    ) {
+
+        const piece =
+            pieces[i];
+
+
+        for (
+            let row = 0;
+            row < SIZE;
+            row++
+        ) {
+
+            for (
+                let col = 0;
+                col < SIZE;
+                col++
+            ) {
+
+                if (
+                    canPlace(
+                        piece,
+                        row,
+                        col
+                    )
+                ) {
+
+                    return;
+
+                }
+
+            }
+
+        }
+
+    }
+
+
+    /* No possible moves */
+
+    document.getElementById(
+        "finalScore"
+    ).textContent = score;
+
+
+    document.getElementById(
+        "gameOver"
+    ).style.display = "flex";
+
+}
+
+
+/* UPDATE SCORE */
+
+function updateScore() {
+
+    document.getElementById(
+        "score"
+    ).textContent = score;
+
+}
+
+
+/* RESTART */
+
+function restartGame() {
+
+    score = 0;
+
+    selectedPiece = null;
+
+
+    document.getElementById(
+        "gameOver"
+    ).style.display = "none";
+
+
+    createBoard();
+
+    generatePieces();
+
+    drawBoard();
+
+    updateScore();
+
+}
+
+
+/* START GAME */
+
+restartGame();
+
+</script>
+
+</body>
+</html>
