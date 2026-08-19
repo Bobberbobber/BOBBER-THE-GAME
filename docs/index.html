@@ -82,6 +82,7 @@
             background: #1f2937;
             border-radius: 5px;
             transition: 0.1s;
+            cursor: pointer;
         }
 
         .cell:hover {
@@ -103,6 +104,7 @@
             display: flex;
             justify-content: space-around;
             align-items: center;
+            gap: 10px;
         }
 
         .piece {
@@ -114,10 +116,19 @@
             cursor: pointer;
 
             transition: 0.15s;
+            border-radius: 8px;
+            background: rgba(255,255,255,0.05);
         }
 
         .piece:hover {
             transform: scale(1.1);
+            background: rgba(255,255,255,0.1);
+        }
+
+        .piece.selected {
+            background: rgba(96,165,250,0.3);
+            border: 2px solid #60a5fa;
+            box-shadow: 0 0 10px rgba(96,165,250,0.5);
         }
 
         .piece-cell {
@@ -129,6 +140,13 @@
         .empty-piece-cell {
             width: 25px;
             height: 25px;
+        }
+
+        .status {
+            margin-top: 10px;
+            font-size: 13px;
+            color: #c7cbd1;
+            min-height: 20px;
         }
 
         /* GAME OVER */
@@ -189,6 +207,8 @@
     <div id="board"></div>
 
     <div class="pieces" id="pieces"></div>
+    
+    <div class="status" id="status">Click a piece to select it</div>
 
 </div>
 
@@ -495,6 +515,11 @@ function drawPieces() {
             document.createElement("div");
 
         element.className = "piece";
+        
+        // ADD VISUAL FEEDBACK FOR SELECTED PIECE
+        if (selectedPiece === index) {
+            element.classList.add("selected");
+        }
 
 
         const maxRow =
@@ -572,6 +597,8 @@ function drawPieces() {
             () => {
 
                 selectedPiece = index;
+                updateStatus("Piece selected. Click a cell to place it.");
+                drawPieces();
 
             }
         );
@@ -656,6 +683,7 @@ function placePiece(
         )
     ) {
 
+        updateStatus("Can't place there! Try another spot.");
         return;
 
     }
@@ -712,6 +740,8 @@ function placePiece(
     drawBoard();
 
     updateScore();
+    
+    updateStatus("Select your next piece");
 
     checkGameOver();
 
@@ -892,6 +922,16 @@ function updateScore() {
 
 }
 
+/* UPDATE STATUS */
+
+function updateStatus(message) {
+
+    document.getElementById(
+        "status"
+    ).textContent = message;
+
+}
+
 
 /* RESTART */
 
@@ -914,6 +954,8 @@ function restartGame() {
     drawBoard();
 
     updateScore();
+    
+    updateStatus("Click a piece to select it");
 
 }
 
